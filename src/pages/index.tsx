@@ -6,6 +6,8 @@ import { signIn, signOut, useSession } from "next-auth/react";
 import { trpc } from "../utils/trpc";
 
 const Home: NextPage = () => {
+  const { data: session } = useSession();
+  console.log(session);
   return (
     <>
       <Head>
@@ -14,6 +16,7 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div>hello</div>
+      <button onClick={() => signIn()}>log in</button>
     </>
   );
 };
