@@ -17,9 +17,10 @@ const CreateTweet = () => {
 
     try {
       await tweetSchema.parse({ text });
-    } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
+    } catch (e) {
+      if (e instanceof Error) {
+        const { message } = JSON.parse(e.message)[0];
+        setError(message);
         return;
       } else {
         setError("Something went wrong!");
@@ -32,18 +33,21 @@ const CreateTweet = () => {
 
   return (
     <>
-      {error && JSON.stringify(error)}
+      {error && <p className="bg-red-400 p-1 text-sm text-white">{error}</p>}
       <form
         onSubmit={handleSubmit}
         className="flex w-full flex-col gap-2 rounded-md border-2 p-4"
       >
         <textarea
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setError("");
+            setText(e.target.value);
+          }}
           className="w-full p-4 shadow"
         />
 
         <button
-          className="bg-primary self-end rounded-md px-4 py-2 text-white"
+          className="self-end rounded-md bg-primary px-4 py-2 text-white"
           type="submit"
         >
           Tweet
