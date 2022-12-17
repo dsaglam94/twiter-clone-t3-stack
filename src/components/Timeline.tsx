@@ -1,11 +1,12 @@
 import Image from "next/image";
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { type RouterOutputs, trpc } from "../utils/trpc";
 import CreateTweet from "./CreateTweet";
 
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import updateLocal from "dayjs/plugin/updateLocale";
+import { debounce } from "lodash";
 
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocal);
@@ -28,7 +29,38 @@ dayjs.updateLocale("en", {
   },
 });
 
+function useScrollPosition() {
+  const [scrollPosition, setScrollPosition] = useState<number>(0);
+
+  function _handleScroll() {
+    const height =
+      document.documentElement.scrollHeight -
+      document.documentElement.clientHeight;
+
+    const windowScroll =
+      document.body.scrollTop || document.documentElement.scrollTop;
+
+    const scrolled = (windowScroll / height) * 100;
+
+    setScrollPosition(scrolled);
+  }
+
+  const handleScroll = debounce(_handleScroll, 500);
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [handleScroll]);
+
+  return scrollPosition;
+}
+
 const Timeline = () => {
+  const scrollPosition = useScrollPosition();
+
   const { data, hasNextPage, fetchNextPage, isFetching } =
     trpc.tweet.timeline.useInfiniteQuery(
       { limit: 10 },

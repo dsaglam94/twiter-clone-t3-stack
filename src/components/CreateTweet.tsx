@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import type { SyntheticEvent } from "react";
 import { trpc } from "../utils/trpc";
 import { object, string } from "zod";
+import { debounce } from "lodash";
 
 export const tweetSchema = object({
   text: string({ required_error: "Tweet text is required" }).min(10).max(200),
@@ -31,6 +32,14 @@ const CreateTweet = () => {
     mutateAsync({ text });
   };
 
+  const _onChangeTweet = (e: SyntheticEvent) => {
+    const target = e.target as HTMLInputElement;
+    setError("");
+    setText(target.value);
+  };
+
+  const onChangeTweet = debounce(_onChangeTweet, 500);
+
   return (
     <>
       {error && <p className="bg-red-400 p-1 text-sm text-white">{error}</p>}
@@ -38,13 +47,7 @@ const CreateTweet = () => {
         onSubmit={handleSubmit}
         className="flex w-full flex-col gap-2 rounded-md border-2 p-4"
       >
-        <textarea
-          onChange={(e) => {
-            setError("");
-            setText(e.target.value);
-          }}
-          className="w-full p-4 shadow"
-        />
+        <textarea onChange={onChangeTweet} className="w-full p-4 shadow" />
 
         <button
           className="self-end rounded-md bg-primary px-4 py-2 text-white"
