@@ -33,10 +33,21 @@ const CreateTweet = () => {
   return (
     <>
       {error && JSON.stringify(error)}
-      <form onSubmit={handleSubmit}>
-        <textarea onChange={(e) => setText(e.target.value)} />
+      <form
+        onSubmit={handleSubmit}
+        className="flex w-full flex-col gap-2 rounded-md border-2 p-4"
+      >
+        <textarea
+          onChange={(e) => setText(e.target.value)}
+          className="w-full p-4 shadow"
+        />
 
-        <button type="submit">Tweet</button>
+        <button
+          className="bg-primary self-end rounded-md px-4 py-2 text-white"
+          type="submit"
+        >
+          Tweet
+        </button>
       </form>
     </>
   );

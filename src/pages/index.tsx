@@ -4,6 +4,7 @@ import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
 
 import { trpc } from "../utils/trpc";
+import Timeline from "../components/Timeline";
 
 const Home: NextPage = () => {
   const { data: session } = useSession();
@@ -17,6 +18,7 @@ const Home: NextPage = () => {
       </Head>
       <div>hello</div>
       <button onClick={() => signIn()}>log in</button>
+      <Timeline />
     </>
   );
 };
