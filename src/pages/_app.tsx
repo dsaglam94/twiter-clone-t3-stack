@@ -1,12 +1,14 @@
-import { type AppType } from "next/app";
-import { type Session } from "next-auth";
-import { SessionProvider } from "next-auth/react";
+import "../styles/globals.css";
 
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { SessionProvider } from "next-auth/react";
 import { trpc } from "../utils/trpc";
 
-import "../styles/globals.css";
 import Container from "../components/Container";
 import LoggedOutBanner from "../components/LoggedOutBanner";
+
+import { type AppType } from "next/app";
+import { type Session } from "next-auth";
 
 const MyApp: AppType<{ session: Session | null }> = ({
   Component,
@@ -20,6 +22,7 @@ const MyApp: AppType<{ session: Session | null }> = ({
         </main>
       </Container>
       <LoggedOutBanner />
+      <ReactQueryDevtools />
     </SessionProvider>
   );
 };
