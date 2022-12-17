@@ -29,16 +29,29 @@ dayjs.updateLocale("en", {
 });
 
 const Timeline = () => {
-  const { data } = trpc.tweet.timeline.useQuery({ limit: 10 });
+  const { data, hasNextPage, fetchNextPage, isFetching } =
+    trpc.tweet.timeline.useInfiniteQuery(
+      { limit: 10 },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+      }
+    );
 
+  const tweets = data?.pages.flatMap((page) => page.tweets) ?? [];
   return (
     <div>
       <CreateTweet />
       <div className="border-l-2 border-r-2 border-t-2 border-gray-500">
-        {data?.tweets.map((tweet) => (
+        {tweets.map((tweet) => (
           <Tweet tweet={tweet} key={tweet.id} />
         ))}
       </div>
+      <button
+        onClick={() => fetchNextPage()}
+        disabled={!hasNextPage || isFetching}
+      >
+        Load next
+      </button>
     </div>
   );
 };
