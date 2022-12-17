@@ -1,5 +1,5 @@
 import Image from "next/image";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { type RouterOutputs, trpc } from "../utils/trpc";
 import CreateTweet from "./CreateTweet";
 
@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import updateLocal from "dayjs/plugin/updateLocale";
 import { debounce } from "lodash";
+import { AiFillHeart } from "react-icons/ai";
 
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocal);
@@ -69,7 +70,14 @@ const Timeline = () => {
       }
     );
 
+  useEffect(() => {
+    if (scrollPosition > 90 && hasNextPage && !isFetching) {
+      fetchNextPage();
+    }
+  }, [scrollPosition, hasNextPage, isFetching, fetchNextPage]);
+
   const tweets = data?.pages.flatMap((page) => page.tweets) ?? [];
+
   return (
     <div>
       <CreateTweet />
@@ -77,13 +85,12 @@ const Timeline = () => {
         {tweets.map((tweet) => (
           <Tweet tweet={tweet} key={tweet.id} />
         ))}
+        {!hasNextPage && (
+          <div className="flex w-full items-center justify-center pb-4">
+            <p className="text-sm text-gray-500">No more items to load...</p>
+          </div>
+        )}
       </div>
-      <button
-        onClick={() => fetchNextPage()}
-        disabled={!hasNextPage || isFetching}
-      >
-        Load next
-      </button>
     </div>
   );
 };
@@ -95,6 +102,9 @@ function Tweet({
 }: {
   tweet: RouterOutputs["tweet"]["timeline"]["tweets"][number];
 }) {
+  const likeMutation = trpc.tweet.like.useMutation().mutateAsync;
+  const unlikeMutation = trpc.tweet.unlike.useMutation().mutateAsync;
+
   return (
     <div className="mb-4 border-b-2 border-gray-500">
       <div className="flex items-center p-2">
@@ -117,6 +127,17 @@ function Tweet({
           </div>
           <div>{tweet.text}</div>
         </div>
+      </div>
+
+      <div className="flex items-center gap-1 p-2">
+        <AiFillHeart
+          // className="text-red-600"
+          size="1.5rem"
+          onClick={() => {
+            likeMutation({ tweetId: tweet.id });
+          }}
+        />
+        <span className="text-sm text-gray-500">{10}</span>
       </div>
     </div>
   );
