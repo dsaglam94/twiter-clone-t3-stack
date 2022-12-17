@@ -1,18 +1,19 @@
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
-import { type RouterOutputs, trpc } from "../utils/trpc";
+import { type RouterOutputs, trpc, RouterInputs } from "../utils/trpc";
 import CreateTweet from "./CreateTweet";
 
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import updateLocal from "dayjs/plugin/updateLocale";
 import { debounce } from "lodash";
-import { AiFillHeart } from "react-icons/ai";
+import { AiFillHeart, AiOutlineHeart } from "react-icons/ai";
 import {
   type InfiniteData,
   type QueryClient,
   useQueryClient,
 } from "@tanstack/react-query";
+import Link from "next/link";
 
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocal);
@@ -34,6 +35,8 @@ dayjs.updateLocale("en", {
     yy: "%dy",
   },
 });
+
+const LIMIT = 10;
 
 function useScrollPosition() {
   const [scrollPosition, setScrollPosition] = useState<number>(0);
@@ -69,8 +72,10 @@ function updateCache({
   variables,
   data,
   action,
+  input,
 }: {
   client: QueryClient;
+  input: RouterInputs["tweet"]["timeline"];
   variables: {
     tweetId: string;
   };
@@ -83,9 +88,7 @@ function updateCache({
     [
       ["tweet", "timeline"],
       {
-        input: {
-          limit: 10,
-        },
+        input,
         type: "infinite",
       },
     ],
@@ -93,6 +96,9 @@ function updateCache({
       const newData = oldData as InfiniteData<
         RouterOutputs["tweet"]["timeline"]
       >;
+
+      const value = action === "like" ? 1 : -1;
+
       const newTweets = newData.pages.map((page) => {
         return {
           tweets: page.tweets.map((tweet) => {
@@ -100,6 +106,9 @@ function updateCache({
               return {
                 ...tweet,
                 likes: action === "like" ? [data.userId] : [],
+                _count: {
+                  likes: tweet._count.likes + value,
+                },
               };
             }
 
@@ -116,13 +125,17 @@ function updateCache({
   );
 }
 
-const Timeline = () => {
+const Timeline = ({
+  where = {},
+}: {
+  where: RouterInputs["tweet"]["timeline"]["where"];
+}) => {
   const scrollPosition = useScrollPosition();
   const client = useQueryClient();
 
   const { data, hasNextPage, fetchNextPage, isFetching } =
     trpc.tweet.timeline.useInfiniteQuery(
-      { limit: 10 },
+      { limit: 10, where },
       {
         getNextPageParam: (lastPage) => lastPage.nextCursor,
       }
@@ -141,11 +154,19 @@ const Timeline = () => {
       <CreateTweet />
       <div className="border-l-2 border-r-2 border-t-2 border-gray-500">
         {tweets.map((tweet) => (
-          <Tweet tweet={tweet} key={tweet.id} client={client} />
+          <Tweet
+            tweet={tweet}
+            key={tweet.id}
+            client={client}
+            input={{
+              where,
+              limit: LIMIT,
+            }}
+          />
         ))}
         {!hasNextPage && (
           <div className="flex w-full items-center justify-center pb-4">
-            <p className="text-sm text-gray-500">No more items to load...</p>
+            <p className="text-sm text-gray-500">No more tweets to load...</p>
           </div>
         )}
       </div>
@@ -158,22 +179,33 @@ export default Timeline;
 function Tweet({
   tweet,
   client,
+  input,
 }: {
   tweet: RouterOutputs["tweet"]["timeline"]["tweets"][number];
   client: QueryClient;
+  input: RouterInputs["tweet"]["timeline"];
 }) {
   const likeMutation = trpc.tweet.like.useMutation({
     onSuccess: (data, variables) => {
-      updateCache({ client, data, variables, action: "like" });
+      updateCache({ client, data, variables, input, action: "like" });
     },
   }).mutateAsync;
   const unlikeMutation = trpc.tweet.unlike.useMutation({
     onSuccess: (data, variables) => {
-      updateCache({ client, data, variables, action: "unlike" });
+      updateCache({ client, data, variables, input, action: "unlike" });
     },
   }).mutateAsync;
 
   const hasLiked = tweet.likes.length > 0;
+
+  const handleLike = () => {
+    if (hasLiked) {
+      unlikeMutation({ tweetId: tweet.id });
+      return;
+    }
+
+    likeMutation({ tweetId: tweet.id });
+  };
 
   return (
     <div className="mb-4 border-b-2 border-gray-500">
@@ -189,7 +221,9 @@ function Tweet({
         )}
         <div className="ml-2">
           <div className="flex items-center gap-2">
-            <p className="font-bold">{tweet.author.name}</p>
+            <Link href={`/${tweet.author.name}`}>
+              <p className="font-bold">{tweet.author.name}</p>
+            </Link>
             <span>-</span>
             <p className="text-xs text-gray-500">
               {dayjs(tweet.createdAt).fromNow()}
@@ -199,20 +233,25 @@ function Tweet({
         </div>
       </div>
 
-      <div className="flex items-center gap-1 p-2">
-        <AiFillHeart
-          color={hasLiked ? "red" : ""}
-          size="1.5rem"
-          onClick={() => {
-            if (hasLiked) {
-              unlikeMutation({ tweetId: tweet.id });
-              return;
-            }
-
-            likeMutation({ tweetId: tweet.id });
-          }}
-        />
-        <span className="text-sm text-gray-500">{10}</span>
+      <div
+        onClick={handleLike}
+        className="group flex w-min cursor-pointer items-center gap-1 p-2 "
+      >
+        {hasLiked ? (
+          <AiFillHeart className="text-red-600" size="1.25rem" />
+        ) : (
+          <AiOutlineHeart
+            className="text-gray-600 transition duration-300 ease-in-out group-hover:text-red-600"
+            size="1.25rem"
+          />
+        )}
+        <span
+          className={`text-sm ${
+            hasLiked ? "text-red-600" : "text-gray-600"
+          } transition duration-300 ease-in-out group-hover:text-red-600`}
+        >
+          {tweet._count.likes}
+        </span>
       </div>
     </div>
   );

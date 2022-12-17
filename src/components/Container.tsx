@@ -1,4 +1,5 @@
 import React from "react";
+import Navbar from "./Navbar";
 
 const Container = ({
   children,
@@ -8,7 +9,8 @@ const Container = ({
   classNames?: string;
 }) => {
   return (
-    <div className={`m-auto max-w-xl bg-slate-200 ${classNames}`}>
+    <div className={`m-auto max-w-2xl bg-slate-400 ${classNames}`}>
+      <Navbar />
       {children}
     </div>
   );
