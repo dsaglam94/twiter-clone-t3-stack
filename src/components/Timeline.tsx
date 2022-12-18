@@ -1,6 +1,6 @@
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
-import { type RouterOutputs, trpc, RouterInputs } from "../utils/trpc";
+import { type RouterOutputs, type RouterInputs, trpc } from "../utils/trpc";
 import CreateTweet from "./CreateTweet";
 
 import dayjs from "dayjs";
@@ -14,6 +14,8 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import SigninPrompt from "./SigninPrompt";
 
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocal);
@@ -185,6 +187,9 @@ function Tweet({
   client: QueryClient;
   input: RouterInputs["tweet"]["timeline"];
 }) {
+  const { data: session } = useSession();
+  const [isSigninPromptOpen, setIsSigninPromptOpen] = useState<boolean>(false);
+
   const likeMutation = trpc.tweet.like.useMutation({
     onSuccess: (data, variables) => {
       updateCache({ client, data, variables, input, action: "like" });
@@ -196,9 +201,14 @@ function Tweet({
     },
   }).mutateAsync;
 
-  const hasLiked = tweet.likes.length > 0;
+  const hasLiked = tweet.likes.length > 0 && session?.user;
 
   const handleLike = () => {
+    if (!session?.user) {
+      setIsSigninPromptOpen(true);
+      return;
+    }
+
     if (hasLiked) {
       unlikeMutation({ tweetId: tweet.id });
       return;
@@ -209,6 +219,9 @@ function Tweet({
 
   return (
     <div className="mb-4 border-b-2 border-gray-500">
+      {isSigninPromptOpen && (
+        <SigninPrompt onChangePromptOpen={setIsSigninPromptOpen} />
+      )}
       <div className="flex items-center p-2">
         {tweet.author.image && (
           <Image

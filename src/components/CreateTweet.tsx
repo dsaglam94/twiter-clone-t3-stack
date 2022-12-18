@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -8,6 +8,7 @@ import { debounce } from "lodash";
 import { useSession } from "next-auth/react";
 
 import type { SyntheticEvent } from "react";
+import SigninPrompt from "./SigninPrompt";
 
 export const tweetSchema = object({
   text: string({ required_error: "Tweet text is required" }).min(10).max(200),
@@ -16,6 +17,7 @@ export const tweetSchema = object({
 const CreateTweet = () => {
   const [text, setText] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [isSigninPromptOpen, setIsSigninPromptOpen] = useState<boolean>(false);
 
   const { data: session } = useSession();
 
@@ -30,8 +32,22 @@ const CreateTweet = () => {
     },
   });
 
+  useEffect(() => {
+    if (isSigninPromptOpen) {
+      document.body.style.overflow = "hidden";
+      return;
+    }
+
+    document.body.style.overflow = "scroll";
+  }, [isSigninPromptOpen]);
+
   const handleSubmit = async (e: SyntheticEvent) => {
     e.preventDefault();
+
+    if (!session?.user) {
+      setIsSigninPromptOpen(true);
+      return;
+    }
 
     try {
       await tweetSchema.parse({ text });
@@ -61,6 +77,9 @@ const CreateTweet = () => {
     <>
       {error && <p className="bg-red-400 p-1 text-sm text-white">{error}</p>}
       <div className="flex items-start gap-2 bg-gray-700 p-4">
+        {isSigninPromptOpen && (
+          <SigninPrompt onChangePromptOpen={setIsSigninPromptOpen} />
+        )}
         {session?.user?.image && (
           <Link href={`/${session.user.name}`}>
             <Image
