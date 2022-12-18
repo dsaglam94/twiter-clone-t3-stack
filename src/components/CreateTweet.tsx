@@ -21,8 +21,6 @@ const CreateTweet = () => {
 
   const { data: session } = useSession();
 
-  console.log(session);
-
   const utils = trpc.useContext();
 
   const { mutateAsync } = trpc.tweet.create.useMutation({

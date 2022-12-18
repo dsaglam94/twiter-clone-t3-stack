@@ -1,13 +1,9 @@
 import Head from "next/head";
-import { useSession } from "next-auth/react";
-
 import Timeline from "../components/Timeline";
 
 import { type NextPage } from "next";
 
 const Home: NextPage = () => {
-  const { data: session } = useSession();
-  console.log(session);
   return (
     <>
       <Head>

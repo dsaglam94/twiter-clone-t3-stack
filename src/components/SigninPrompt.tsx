@@ -1,12 +1,12 @@
 import React, { type Dispatch, type SetStateAction } from "react";
 import { signIn } from "next-auth/react";
 import { AiOutlineClose } from "react-icons/ai";
+
 const SigninPrompt = ({
   onChangePromptOpen,
 }: {
   onChangePromptOpen: Dispatch<SetStateAction<boolean>>;
 }) => {
-  console.log("test");
   return (
     <div className="absolute top-0 bottom-0 left-0 right-0 flex items-center justify-center bg-black/70">
       <div className="relative flex flex-col items-center justify-center gap-5 rounded-md bg-gray-200 p-10 shadow">
